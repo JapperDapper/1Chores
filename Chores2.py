@@ -17,6 +17,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 # 2, 4, 6 are breaks
 # 7 and above are a period where you have no chores. 
 # It cycles through the chores in the order of the keys.
+# Keep the tail of the rotation chore free to allow flexibility in members.
 chore_names = {
     1: "laundry duty",
     3: "trash duty",
@@ -24,13 +25,14 @@ chore_names = {
     7: "Kitchen Captain"
 }
 
+
 class Member:
     def __init__(self, id: int, name: str):
         self.id = int(id)
         self.name = name
 
 
-
+# Reads Chores2.csv in the same directory as the script
 def read_csv(file_path: str, encoding: str = 'iso-8859-1') -> List[List[str]]:
     try:
         with open(file_path, 'r', encoding=encoding) as f:
@@ -44,7 +46,7 @@ def read_csv(file_path: str, encoding: str = 'iso-8859-1') -> List[List[str]]:
         return []
 
 
-
+# Writes data to Chores2.csv
 def write_csv(file_path: str, data: List[List[str]]) -> None:
     try:
         with open(file_path, 'w', newline='') as f:
@@ -55,25 +57,25 @@ def write_csv(file_path: str, data: List[List[str]]) -> None:
         logging.error(f"Error writing to CSV file: {e}")
 
 
-
+# Rotates members through the chores
 def rotate_members(members: List[Member]) -> List[Member]:
     total_members = len(members)
     return [Member((member.id % total_members) + 1, member.name) for member in members]
 
 
-
+# Formats the chore update strings
 def generate_chore_update_string(members: List[Member], current_week: int) -> str:
     chore_update = f"Chore Update 🙌\n\nWeek: {current_week}\n\n"
     sorted_members = sorted(members, key=lambda member: member.id)
     
     for member in sorted_members:
         if member.id in chore_names:
-            chore_update += f"{member.name} on {chore_names[member.id]}\n"
+            chore_update += f"{member.name} on {chore_names[member.id]}\n\n"
 
     return chore_update.strip()
 
 
-
+# Removes a member from the list. Behaves differently if the member is in the inner chore cycle or not. 
 def remove_member(members: List[Member], id_to_remove: int) -> List[Member]:
     max_chore_id = max(chore_names.keys())
 
@@ -99,7 +101,7 @@ def remove_member(members: List[Member], id_to_remove: int) -> List[Member]:
     return members
 
 
-
+# Adds a new member to the end of the list
 def add_member(members: List[Member], new_member_name: str) -> List[Member]:
     new_member_id = max(member.id for member in members) + 1
     new_member = Member(new_member_id, new_member_name)
@@ -107,7 +109,7 @@ def add_member(members: List[Member], new_member_name: str) -> List[Member]:
     return members
 
 
-
+# A little UI to rotate or remove/add members
 def handle_choice(members: List[Member], members_data: List[List[str]]) -> Tuple[str, int, List[Member]]:
     while True:
         choice = input("(R)emove, (A)dd, or progress to next (W)eek?: ").lower()
@@ -142,7 +144,7 @@ def main():
     if not members_data:
         return
     
-    members = [Member(row[0], row[1]) for row in members_data[1:]]
+    members = [Member(row[0], row[1]) for row in members_data[1:]] # Skip the first row with the week number 1:
     current_week = datetime.now().isocalendar()[1]
     
     logging.info(f"Current week: {current_week}")
